@@ -57,9 +57,11 @@ The format of the input file is a JSON array that describe the files to upload, 
 ]
 ```
 
-`ContentDocumentId` is a simple text field that you can you to relate the old ID to the new ID provided by Salesforce, and really its value is not used to upload the file, only in the result output is it used.
+`ContentDocumentId` is a simple text field that you can you to relate an old ID to the new ID provided by Salesforce
 
-Expected output of the program will look this;
+Its value is not used to upload the file, but will be present in the result to help you correlate your old Id to the new Id.
+
+Expected output of the program will look this if csv is chosen;
 
 ```
 "OldContentDocumentId","ContentDocumentId","LinkedEntityId","File","Error"
