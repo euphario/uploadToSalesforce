@@ -1,0 +1,13 @@
+[
+  {
+    "Checksum": "11ff191e98284df44bb693cc70e19d80",
+    "FileExtension": "pdf",
+    "PathOnClient": "TestFile1.pdf",
+    "Title": "This is a test PDF file",
+    "OldContentDocumentIds": [
+      "0690H000007QPznQAG"
+    ],
+    "LinkedEntityId": "0036g000006NQE3AAO,00Q6g000002rxmUEAQ",
+    "FilePath": "files/TestFile1.pdf"
+  }
+]

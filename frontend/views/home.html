@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="public/tailwind.css" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <!-- <script>
+        document.addEventListener('alpine:init', evt => {
+            Alpine.data('progress', () => ({
+                percent: '0%'
+            }))
+        })
+        document.addEventListener('updatePercent', evt => {
+            console.log('event received ' + JSON.stringify(evt.percent));
+            Alpine.data('progress', () => ({
+                percent: '80%'
+            }))
+        })
+    </script> -->
+    <script>
+        var total = 0;
+        var records = 0;
+
+        window.addEventListener("load", function (evt) {
+
+            var output = document.getElementById("output");
+            var input = document.getElementById("input");
+            var ws;
+
+            var print = function (message) {
+                var d = document.createElement("div");
+                d.textContent = message;
+                output.appendChild(d);
+                output.scroll(0, output.scrollHeight);
+            };
+
+            // if (document.cookie.indexOf('X-Instance=') > -1) {
+            //     if (ws) {
+            //         return false;
+            //     }
+            //     ws = new WebSocket("{{.}}");
+            //     ws.onopen = function (evt) {
+            //         print("OPEN");
+            //     }
+            //     ws.onclose = function (evt) {
+            //         print("CLOSE");
+            //         ws = null;
+            //     }
+            //     ws.onmessage = function (evt) {
+            //         print("RESPONSE: " + evt.data);
+            //     }
+            //     ws.onerror = function (evt) {
+            //         print("ERROR: " + evt.data);
+            //     }
+            //     return false;
+            // }
+
+            document.getElementById("open").onclick = function (evt) {
+                if (ws) {
+                    return false;
+                }
+                ws = new WebSocket("{{.}}");
+                ws.onopen = function (evt) {
+                    // console.log(Alpine.data)
+                    // document.dispatchEvent(new CustomEvent('update-percent', { bubbles: true, detail: 70 }))
+
+                }
+                ws.onclose = function (evt) {
+                    // print("CLOSE");
+                    ws = null;
+                }
+                ws.onmessage = function (evt) {
+                    msg = JSON.parse(evt.data);
+                    total = parseInt(msg.totalSize)
+                    records += parseInt(msg.records)
+                    if (msg.done) {
+                        total = 0
+                        records = 0;
+                    }
+                    document.dispatchEvent(new CustomEvent('update-percent', { bubbles: true, detail: Math.round(records / total * 100) }));
+                }
+                ws.onerror = function (evt) {
+                    // print("ERROR: " + evt.data);
+                }
+                return false;
+            };
+
+            document.getElementById("getFiles").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT Id, ContentDocumentId, Title, Checksum, FileExtension, PathOnClient FROM ContentVersion WHERE IsDeleted=false AND IsLatest=true", filename: "ContentVersion"
+                }));
+                return false;
+            };
+            document.getElementById("getFunding").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT CreatedDate,Declined_By__c,Declined_Date__c,Declined_Reason__c,Funding_Approved_By__c,Funding_Approved_Date__c,Funding_Impaired_Date__c,Funding_Impaired_Reason__c,Funding_Record__c,Funding_Stage__c,Funding_Type__c,Id,IsDeleted,LastActivityDate,Name,Opportunity__c,Plaintiff_Name__c,Plaintiff__c,Stage__c,Status__c FROM Funding__c", filename: "Funding__c"
+                }));
+                return false;
+            };
+            document.getElementById("getCourtCase").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT Attorney__c,Case_Stage__c,Case_Status__c,Case_Type__c,Court_Case_Number__c,Court__c,CreatedById,CreatedDate,Defendant_Name__c,Funding_Status__c,Id,IsDeleted,Law_Firm__c,Name,Plaintiff_Name__c,Plaintiff__c,Status__c FROM Court_Case__c", filename: "Court_Case__c"
+                }));
+                return false;
+            };
+
+            document.getElementById("getPlaintiff").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT CreatedById,CreatedDate,Email__c,First_Name__c,Gender__c,Historic_Plaintiff_Name__c,Id,IsDeleted,Last_Name__c,Middle_Name__c,Name,Number_of_Court_Cases__c,State__c FROM Plaintiff__c", filename: "Plaintiff__c"
+                }));
+                return false;
+            };
+            document.getElementById("getLinksFunding").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT ContentDocumentId, LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (SELECT Id FROM Funding__c)", filename: "ContentDocumentId Funding__c"
+                }));
+                return false;
+            };
+
+            document.getElementById("getLinksCourtCase").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT ContentDocumentId, LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (SELECT Id FROM Court_Case__c)", filename: "ContentDocumentId Court_Case__c"
+                }));
+                return false;
+            };
+
+            document.getElementById("getLinksPlaintiff").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT ContentDocumentId, LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (SELECT Id FROM Plaintiff__c)", filename: "ContentDocumentId Plaintiff__c"
+                }));
+                return false;
+            };
+
+            document.getElementById("getAccount").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT LC_Firm_Number__c,Id,Name FROM Account", filename: "Account"
+                }));
+                return false;
+            };
+
+            document.getElementById("getCourtCase2").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT External_CrtCase_Id__c,Id,Name FROM Court_Case__c", filename: "Court_Case__c"
+                }));
+                return false;
+            };
+
+            document.getElementById("getOpportunity").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT External_Funding_Id__c,External_HistoricOppty_Id__c,Id,Name FROM Opportunity", filename: "Opportunity"
+                }));
+                return false;
+            };
+
+            document.getElementById("getContract").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "query", query: "SELECT AccountId,Court_Case__c,External_Funding_Id__c,Funding_State__c,Id,IsDeleted,Legacy_Contract__c,Name,Old_Funding_Number__c,Opportunity__c,Plaintiff_Name__c,Status FROM Contract", filename: "Contract"
+                }));
+                return false;
+            };
+
+
+            document.getElementById("getEntities").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.send(JSON.stringify({
+                    cmd: "update", query: "", filename: "NewLinkedEntities"
+                }));
+                return false;
+            };
+
+            // document.getElementById("uploadFiles").onclick = function (evt) {
+            //     if (!ws) {
+            //         return false;
+            //     }
+            //     ws.send(JSON.stringify({
+            //         cmd: "upload", query: "", filename: "fileToUpload.json"
+            //     }));
+            //     return false;
+            // };
+
+            document.getElementById("close").onclick = function (evt) {
+                if (!ws) {
+                    return false;
+                }
+                ws.close();
+                return false;
+            };
+
+        });
+    </script>
+</head>
+
+<body>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <form class="space-y-8">
+            <div class="space-y-8">
+                <div class="mt-6 grid grid-cols-1">
+                    <div class="group relative">
+                        <a href="/oauth/login">
+                            <div class="w-32 aspect-ratio">
+                                <img src="https://c1.sfdcstatic.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg"
+                                    alt="Salesforce"
+                                    class="w-full h-full object-center object-cover lg:w-full lg:h-full">
+                            </div>
+                            Login with Salesforce
+                        </a>
+                    </div>
+                </div>
+                <!-- <button type="button" id="open"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Open
+                </button>
+                <button type="button" id="close"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Close
+                </button> -->
+                <!-- <div>
+                    <input type="text" id="input"
+                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        placeholder="Shoud be a SQL query">
+                </div> -->
+                <!-- <button type="button" id="getFiles"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Files
+                </button> -->
+                <a href="salesforce/uploads"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Upload Files
+                </a>
+                <!-- <button type="button" id="getFunding"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Fundind__c
+                </button>
+                <button type="button" id="getCourtCase"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Court_Case__c
+                </button>
+                <button type="button" id="getPlaintiff"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Plaintiff__c
+                </button>
+                <button type="button" id="getLinksFunding"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get All Files from Fundind__c
+                </button>
+                <button type="button" id="getLinksCourtCase"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get All Files from Court_Case__c
+                </button> <button type="button" id="getLinksPlaintiff"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get All Files from Plaintiff__c
+                </button>
+                </button> <button type="button" id="getAccount"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Account
+                </button>
+                </button> <button type="button" id="getCourtCase2"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Court Case 2
+                </button>
+                </button> <button type="button" id="getOpportunity"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Opportunity
+                </button>
+                </button> <button type="button" id="getContract"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Contract
+                </button>
+                </button> <button type="button" id="getEntities"
+                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Get Entities
+                </button> -->
+                <dt class="flex-1 flex items-center">
+                    <div aria-hidden="true" class="ml-1 flex-1 flex items-center">
+                        <div x-data="{percent: 0}" @update-percent.document="percent = $event.detail"
+                            class="ml-3 relative flex-1">
+                            <div class="h-3 bg-gray-100 border border-gray-200 rounded-full"></div>
+                            <div :style="`width: ${percent}%`;"
+                                class="absolute inset-y-0 bg-yellow-400 border border-yellow-400 rounded-full"></div>
+                        </div>
+                    </div>
+                </dt>
+
+                <dd class="ml-3 w-10 text-right tabular-nums text-sm text-gray-900" x-data="{percent: 0}"
+                    @update-percent.document="percent = $event.detail">
+                    <span x-text="percent">%</span>
+                </dd>
+            </div>
+            <!-- <table>
+                    <tr>
+                        <td valign="top" width="50%">
+                            <div id="output" style="max-height: 70vh;overflow-y: scroll;"></div>
+                        </td>
+                    </tr>
+                </table> -->
+    </div>
+    </form>
+    </div>
+</body>
+
+</html>
