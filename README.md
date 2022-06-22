@@ -29,7 +29,7 @@ Usage of ./uploadToSalesforce:
     	file for upload task
 ```
 
-The three parameters that you will need are `-instance`, `-output` and `-upload`
+The three parameters that you will need are `-instance`, `-output` and `-upload`. For a test instance of Salesforce, please use `-instance test`
 
 For example;
 
@@ -37,6 +37,10 @@ For example;
 ❯ ./uploadToSalesforce -output result.csv -upload fileToUpload.json
 ```
 
+This should automatically open your web browser, and if not otherwise specified, `http://localhost:3000`. Once the page is displayed, please click on the Salesforce picture to log into your instance. Once completed, click on `Upload`
+
+
+### Input file
 The format of the input file is a JSON array that describe the files to upload, the `LinkedEntityId` must be correct and can be a list separated by commas.
 
 ```json
